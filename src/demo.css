@@ -1,0 +1,69 @@
+:root {
+    --clr-accent: #6480c5;
+    --autocomplete-bg: #213547;
+    --autocomplete-selected: #172935;
+}
+
+@media (prefers-color-scheme: light) {
+    :root {
+        --clr-accent: #3b4d7c;
+        --autocomplete-bg: #ededed;
+        --autocomplete-selected: #e9ecf7;
+    }
+}
+
+z-autocomplete:not(:defined) {
+    display: none!important;
+}
+
+z-autocomplete#full-example-el {
+    position: relative;
+    display: block;
+}
+
+z-autocomplete#full-example-el input {
+    display: block;
+    width: 100%;
+    padding-inline-end: 2.5rem;
+    background-color: var(--autocomplete-bg);
+}
+
+z-autocomplete#full-example-el button {
+    z-index: 1;
+    position: absolute;
+    inset: 0 0 0 auto;
+    border: none;
+    width: 2.5rem;
+    box-shadow: none;
+}
+
+z-autocomplete#full-example-el ul {
+    z-index: 2; /* fx: prismjs has some annoying styling, this is not necessary in your code */
+    position: absolute;
+    inset: calc(100% - .25rem) 0 auto 0;
+    background-color: var(--autocomplete-bg);
+    border: 1px solid var(--clr-accent);
+    border-top: 0;
+    border-radius: 0 0 .25rem .25rem;
+    list-style: none;
+    padding: 0;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+z-autocomplete#full-example-el ul::before {
+    content: '';
+    display: block;
+    margin: .25rem 10px;
+    border-top: 1px solid var(--clr-accent);
+}
+
+z-autocomplete#full-example-el ul li {
+    padding: 8px 15px;
+}
+
+z-autocomplete#full-example-el ul li:hover,
+z-autocomplete#full-example-el ul li[aria-selected="true"] {
+    background-color: var(--autocomplete-selected);
+}
+

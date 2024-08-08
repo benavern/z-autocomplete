@@ -1,0 +1,25 @@
+{
+    "name": "@benavern/z-autocomplete",
+    "version": "0.0.0",
+    "publishConfig": {
+        "access": "public"
+    },
+    "type": "module",
+    "main": "dist/z-autocomplete.js",
+    "module": "dist/z-autocomplete.js",
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "dev": "vite",
+        "build:docs": "tsc && vite build --config vite.config.docs.js",
+        "build:lib": "tsc && vite build --config vite.config.lib.js",
+        "preview": "vite preview --config vite.config.docs.js",
+        "prepublishOnly": "npm run build:lib"
+    },
+    "devDependencies": {
+        "lit": "^3.1.2",
+        "typescript": "^5.2.2",
+        "vite": "^5.1.4"
+    }
+}
