@@ -70,7 +70,7 @@ fullExampleEl.formatInputValueLibelle = (option) => {
     return String(option?.libelle || '');
 }
 
-fullExampleEl.addEventListener('change', (e: Event) => {
+fullExampleEl.addEventListener('autocomplete', (e: Event) => {
     const event = e as CustomEvent;
 
     console.log('🌟 value changed to', event.detail);

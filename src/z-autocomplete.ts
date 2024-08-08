@@ -58,14 +58,14 @@ export class ZAutocomplete extends LitElement {
         this._value = val;
         this._clearOptions();
         this._inputEl.value = this.formatInputValueLibelle(val);
-        this.dispatchEvent(new CustomEvent('change', {
+        this.dispatchEvent(new CustomEvent('autocomplete', {
             detail: val,
             bubbles: true,
-            composed: true,
+            // composed: true, // no need because no shadowDom is used ?
         }));
     }
     get value() {
-        return this._value
+        return this._value;
     };
 
     // options
@@ -185,6 +185,7 @@ export class ZAutocomplete extends LitElement {
 
     private _selectOption(option:any) {
         this.value = option;
+        this._activeOptionIndex = undefined;
     }
 
     private _navigateToNextOption(offset:number = 1) {
