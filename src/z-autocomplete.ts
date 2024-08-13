@@ -160,7 +160,7 @@ export class ZAutocomplete extends LitElement {
     }
 
     private _onClear() {
-        this._abortController?.abort('ZAutocomplete <input> has been cleared.');
+        this._abortController?.abort('ZAutocomplete [data-z-autocomplete-input] has been cleared.');
         this.value = undefined;
     }
 
