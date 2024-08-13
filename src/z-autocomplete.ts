@@ -1,6 +1,5 @@
 import { LitElement, render } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
-import { map } from 'lit/directives/map.js';
 import { html } from 'lit/static-html.js';
 
 export interface ZAutocompleteOption {
@@ -22,10 +21,6 @@ const debounce: Function = (cb: Function, delay: number = 1000) => {
     };
 };
 
-const clamp = (nb: Number, { min = -Infinity, max = Infinity }) => {
-    return Math.max(min, Math.min(Number(nb) || min, max));
-}
-
 @customElement('z-autocomplete')
 export class ZAutocomplete extends LitElement {
     // no shadow root!
@@ -36,13 +31,13 @@ export class ZAutocomplete extends LitElement {
     public debouceDelay: Number = 300;
 
     // --- dom refs
-    @query('input[data-z-autocomplete-input]')
+    @query('[data-z-autocomplete-input]')
     private _inputEl!: HTMLInputElement | HTMLTextAreaElement; // | ElementContentEditable;
 
-    @query('button[data-z-autocomplete-clear]')
+    @query('[data-z-autocomplete-clear]')
     private _clearEl!: HTMLElement;
 
-    @query('ul[data-z-autocomplete-options]')
+    @query('[data-z-autocomplete-options]')
     private _optionsEl!: HTMLUListElement;
 
     // --- properties & state
@@ -224,7 +219,7 @@ export class ZAutocomplete extends LitElement {
     private _renderOptions() {
         let template;
 
-        if (this.options.length) template = map(this.options, this._formatOptionTemplate.bind(this));
+        if (this.options.length) template = this.options.map(this._formatOptionTemplate.bind(this));
 
         render(template || '', this._optionsEl);
     }
@@ -247,16 +242,15 @@ export class ZAutocomplete extends LitElement {
     }
 
     private _navigateToOption(newIndex: number) {
-        newIndex = clamp(newIndex, { min: 0, max: this.options.length - 1 });
-
+        if (newIndex < 0) return;
         if (newIndex === this._activeOptionIndex) return;
+        if (newIndex > this.options.length - 1) return;
 
         // if the option chosen is disabled, we pass
         if (this.options[newIndex].disabled) {
-            const offset = newIndex - this._activeOptionIndex;
-            let nextIndex = this._activeOptionIndex + (offset > 0 ? offset + 1 : offset - 1);
-            nextIndex = clamp(nextIndex, { min: 0, max: this.options.length - 1 });
-            if (nextIndex !== newIndex) this._navigateToOption(nextIndex);
+            let offset = newIndex - this._activeOptionIndex;
+            offset = offset > 0 ? offset + 1 : offset - 1;
+            this._navigateToOption(this._activeOptionIndex + offset);
             return;
         }
 
