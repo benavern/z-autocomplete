@@ -171,10 +171,6 @@ export class ZAutocomplete extends LitElement {
     private _clearOptions() {
         this.options = [];
         this.open = false;
-        this._resetActiveOption();
-    }
-
-    private _resetActiveOption() {
         this._activeOptionIndex = -1;
     }
 
