@@ -144,6 +144,7 @@ export class ZAutocomplete extends LitElement {
 
     private _initClearEl(): void {
         this._clearEl.setAttribute('type', 'button');
+        this._clearEl.hidden = true;
     }
 
     private _initOptionsEl(): void {
@@ -156,6 +157,7 @@ export class ZAutocomplete extends LitElement {
     private _onClear() {
         this._abortController?.abort('the input has been cleared.');
         this.value = undefined;
+        if (this._clearEl) this._clearEl.hidden = true;
     }
 
     private _clearOptions() {
@@ -195,8 +197,12 @@ export class ZAutocomplete extends LitElement {
         e.stopPropagation();
         this._clearOptions();
 
-        if (!this._inputEl.value) return this._onClear();
+        if (!this._inputEl.value) {
+            if (this._clearEl) this._clearEl.hidden = true;
+            return this._onClear();
+        }
 
+        if (this._clearEl) this._clearEl.hidden = false;
         this._abortController?.abort('A new search has been performed');
         this._abortController = new AbortController();
 
