@@ -241,7 +241,7 @@ export class ZAutocomplete extends LitElement {
     }
 
     private _selectOption(option: ZAutocompleteOption) {
-        if (option.disabled) return;
+        if (!option || option.disabled) return;
 
         this.value = option.value;
     }
