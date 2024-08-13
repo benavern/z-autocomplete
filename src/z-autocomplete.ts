@@ -28,6 +28,7 @@ export class ZAutocomplete extends LitElement {
         return this;
     }
 
+    @property({ type: Number })
     public debouceDelay: Number = 300;
 
     // --- dom refs
