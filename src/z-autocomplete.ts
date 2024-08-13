@@ -153,7 +153,7 @@ export class ZAutocomplete extends LitElement {
     }
 
     private _initOptionsEl(): void {
-        if(!this._optionsEl) throw new Error('ZAutocomplete : No <ul data-z-autocomplete-options> element provided to take control on');
+        if(!this._optionsEl) throw new Error('ZAutocomplete : No ul[data-z-autocomplete-options] element provided to take control on');
 
         this._optionsEl.setAttribute('role', 'listbox');
         this._optionsEl.hidden = true;
