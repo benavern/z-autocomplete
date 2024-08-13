@@ -240,7 +240,7 @@ export class ZAutocomplete extends LitElement {
         `
     }
 
-    private _selectOption(option: ZAutocompleteOption) {
+    private _selectOption(option?: ZAutocompleteOption) {
         if (!option || option.disabled) return;
 
         this.value = option.value;
