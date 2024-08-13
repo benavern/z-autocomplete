@@ -244,7 +244,6 @@ export class ZAutocomplete extends LitElement {
         if (option.disabled) return;
 
         this.value = option.value;
-        this._resetActiveOption();
     }
 
     private _navigateToOption(newIndex: number) {
