@@ -263,7 +263,9 @@ export class ZAutocomplete extends LitElement {
             el.setAttribute('aria-selected', String(isSelected));
 
             if (isSelected) {
-                const scrollToEl = el.previousElementSibling?.getAttribute('aria-disabled') === 'true' ? el.previousElementSibling : el;
+                const scrollToEl = el.previousElementSibling?.getAttribute('aria-disabled') === 'true'
+                    ? el.previousElementSibling
+                    : el;
                 scrollToEl.scrollIntoView({ block: 'nearest' }); // needed if the ul is scrollable
             }
         })
