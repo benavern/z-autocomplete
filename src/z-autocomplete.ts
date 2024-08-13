@@ -94,16 +94,11 @@ export class ZAutocomplete extends LitElement {
         return this._options;
     }
 
-    // --- init
-    constructor() {
-        super();
+    connectedCallback(): void {
+        super.connectedCallback();
 
         // override methode for a debounced one.
         this._onInputChange = debounce(this._onInputChange.bind(this), this.debouceDelay);
-    }
-
-    connectedCallback(): void {
-        super.connectedCallback();
 
         this._initInputEl();
         this._initOptionsEl();
@@ -221,6 +216,7 @@ export class ZAutocomplete extends LitElement {
         let template;
 
         if (this.options.length) template = this.options.map(this._formatOptionTemplate.bind(this));
+        else this._optionsEl.scrollTo(0, 0);
 
         render(template || '', this._optionsEl);
     }
@@ -249,6 +245,7 @@ export class ZAutocomplete extends LitElement {
 
         // if the option chosen is disabled, we pass
         if (this.options[newIndex].disabled) {
+            // compute next index
             let offset = newIndex - this._activeOptionIndex;
             offset = offset > 0 ? offset + 1 : offset - 1;
             this._navigateToOption(this._activeOptionIndex + offset);
@@ -265,7 +262,10 @@ export class ZAutocomplete extends LitElement {
 
             el.setAttribute('aria-selected', String(isSelected));
 
-            if (isSelected) el.scrollIntoView({ block: 'nearest' }); // needed if the ul is scrollable
+            if (isSelected) {
+                const scrollToEl = el.previousElementSibling?.getAttribute('aria-disabled') === 'true' ? el.previousElementSibling : el;
+                scrollToEl.scrollIntoView({ block: 'nearest' }); // needed if the ul is scrollable
+            }
         })
     }
 
