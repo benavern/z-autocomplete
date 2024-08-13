@@ -65,9 +65,9 @@ export class ZAutocomplete extends LitElement {
 
         // udpate input value first
         const option = this.dataToOption(val);
-        if (option.inputValue) this._inputEl.value = option.inputValue;
-        else if (typeof option.label === 'string') this._inputEl.value = option.label;
-        else if (option.label instanceof HTMLElement) this._inputEl.value = option.label.textContent ?? '';
+        if (option?.inputValue) this._inputEl.value = option.inputValue;
+        else if (typeof option?.label === 'string') this._inputEl.value = option.label;
+        else if (option?.label instanceof HTMLElement) this._inputEl.value = option.label.textContent ?? '';
         else this._inputEl.value = '';
 
         // update others elements
@@ -279,7 +279,7 @@ export class ZAutocomplete extends LitElement {
         return [];
     }
 
-    public dataToOption(data: any): ZAutocompleteOption {
+    public dataToOption(data: any): ZAutocompleteOption | undefined | null {
         return {
             label: String(data),
             value: data,
