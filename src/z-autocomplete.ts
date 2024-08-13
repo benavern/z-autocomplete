@@ -254,7 +254,8 @@ export class ZAutocomplete extends LitElement {
         // if the option chosen is disabled, we pass
         if (this.options[newIndex].disabled) {
             const offset = newIndex - this._activeOptionIndex;
-            const nextIndex = clamp(this._activeOptionIndex + (2 * offset), { min: 0, max: this.options.length - 1 });
+            let nextIndex = this._activeOptionIndex + (offset > 0 ? offset + 1 : offset - 1);
+            nextIndex = clamp(nextIndex, { min: 0, max: this.options.length - 1 });
             if (nextIndex !== newIndex) this._navigateToOption(nextIndex);
             return;
         }
