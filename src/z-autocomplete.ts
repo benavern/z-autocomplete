@@ -247,6 +247,8 @@ export class ZAutocomplete extends LitElement {
 
         // if the option chosen is disabled, we pass
         if (this.options[newIndex].disabled) {
+            // allow scrolling on disabled li
+            this._optionsEl.querySelector(`li[data-index="${newIndex}"]`)?.scrollIntoView({ block: 'nearest' });
             // compute next index
             let offset = newIndex - this._activeOptionIndex;
             offset = offset > 0 ? offset + 1 : offset - 1;
@@ -264,12 +266,7 @@ export class ZAutocomplete extends LitElement {
 
             el.setAttribute('aria-selected', String(isSelected));
 
-            if (isSelected) {
-                const scrollToEl = el.previousElementSibling?.getAttribute('aria-disabled') === 'true'
-                    ? el.previousElementSibling
-                    : el;
-                scrollToEl.scrollIntoView({ block: 'nearest' }); // needed if the ul is scrollable
-            }
+            if (isSelected) el.scrollIntoView({ block: 'nearest' }); // needed if the ul is scrollable
         })
     }
 
