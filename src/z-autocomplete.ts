@@ -182,13 +182,19 @@ export class ZAutocomplete extends LitElement {
                 this._navigateToOption();
                 event.preventDefault();
                 break;
+
             case 'ArrowUp':
                 this._navigateToOption(-1);
                 event.preventDefault();
                 break;
+
             case 'Enter':
-                    this._selectOption(this.options[this._activeOptionIndex ?? -1]);
-                    event.preventDefault();
+                this._selectOption(this.options[this._activeOptionIndex ?? -1]);
+                event.preventDefault();
+                break;
+
+            case 'Escape':
+                this.open = false;
                 break;
         }
     }
