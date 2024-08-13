@@ -137,7 +137,7 @@ export class ZAutocomplete extends LitElement {
 
     // --- private methods
     private _initInputEl(): void {
-        if(!this._inputEl) throw new Error('ZAutocomplete : No <input data-z-autocomplete-input> element provided to take control on');
+        if(!this._inputEl) throw new Error('ZAutocomplete : No [data-z-autocomplete-input] element provided to take control on');
 
         this._inputEl.setAttribute('role', 'combobox');
         this._inputEl.setAttribute('aria-expanded', 'false');
