@@ -51,19 +51,18 @@ z-autocomplete#full-example-el ul {
     overflow-y: auto;
 }
 
-z-autocomplete#full-example-el ul::before {
-    content: '';
-    display: block;
-    margin: .25rem 10px;
-    border-top: 1px solid var(--clr-accent);
-}
-
 z-autocomplete#full-example-el ul li {
     padding: 8px 15px;
 }
 
-z-autocomplete#full-example-el ul li:hover,
+z-autocomplete#full-example-el ul li:not([aria-disabled="true"]):hover,
 z-autocomplete#full-example-el ul li[aria-selected="true"] {
+    cursor: pointer;
     background-color: var(--autocomplete-selected);
+}
+
+z-autocomplete#full-example-el ul li[aria-disabled="true"] {
+    background-color: var(--clr-accent);
+    color: var(--autocomplete-selected);
 }
 

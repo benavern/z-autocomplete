@@ -31,22 +31,19 @@ nav.innerHTML = /* html */`
 document.body.querySelector('header')?.after(nav);
 
 // Fetch method for the Full Demo
-const AUTOCOMPLETE_OPTIONS = [
-    { id: 1, libelle: 'Option1' },
-    { id: 2, libelle: 'Option2' },
-    { id: 3, libelle: 'Option3' },
-    { id: 4, libelle: 'Option4' },
-    { id: 5, libelle: 'Option5' },
-    { id: 6, libelle: 'Option6' },
-    { id: 7, libelle: 'Option7' },
-    { id: 8, libelle: 'Option8' },
-    { id: 9, libelle: 'Option9' },
-    { id: 10, libelle: 'Option10' },
+const AUTOCOMPLETE_DATA = [
+    { id: 1, name: 'Option1' },
+    { id: 2, name: 'Option2' },
+    { id: 3, name: 'Option3' },
+    { id: 4, name: 'Option4' },
+    { id: 5, name: 'Option5' },
+    { id: 6, name: 'Option6' },
+    { id: 7, name: 'Option7' },
 ];
 
 const fullExampleEl = document.querySelector('#full-example-el') as ZAutocomplete;
 
-fullExampleEl.fetchOptions = async (inputValue: string, abortSignal) => {
+fullExampleEl.fetchData = async (inputValue: string, abortSignal) => {
     console.log('🔎 we are looking for ... ', inputValue);
 
     // it is here that you will put your fetch code!
@@ -57,17 +54,28 @@ fullExampleEl.fetchOptions = async (inputValue: string, abortSignal) => {
         return [];
     }
 
-    return AUTOCOMPLETE_OPTIONS;
+    return AUTOCOMPLETE_DATA;
 }
 
-fullExampleEl.formatOptionLibelle = (option) => {
-    return option
-        ? `#${option.id} ${ option.libelle ?? ''}`
-        : '';
-}
+fullExampleEl.dataToOption = (data) => {
+    if (!data) return undefined;
 
-fullExampleEl.formatInputValueLibelle = (option) => {
-    return String(option?.libelle || '');
+    // this is fake ...
+    const isTitle = [1, 4].includes(data.id);
+
+    let label: string | HTMLElement = String(data.name);
+
+    if (isTitle) {
+        label = document.createElement('strong');
+        label.textContent = data.name;
+    }
+
+    return {
+        label,
+        inputValue: String(data.name),
+        value: data,
+        disabled: isTitle,
+    };
 }
 
 fullExampleEl.addEventListener('autocomplete', (e: Event) => {
@@ -77,4 +85,4 @@ fullExampleEl.addEventListener('autocomplete', (e: Event) => {
 })
 
 // default value if necessary
-// fullExampleEl.value = AUTOCOMPLETE_OPTIONS[0];
+// fullExampleEl.value = AUTOCOMPLETE_DATA[0];
