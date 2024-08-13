@@ -28,6 +28,7 @@ export class ZAutocomplete extends LitElement {
         return this;
     }
 
+    @property({ type: Number })
     public debouceDelay: Number = 300;
 
     // --- dom refs
@@ -64,8 +65,10 @@ export class ZAutocomplete extends LitElement {
 
         // udpate input value first
         const option = this.dataToOption(val);
-        this._inputEl.value = option?.inputValue
-            ?? (typeof option?.label === 'string' ? option?.label : '');
+        if (option.inputValue) this._inputEl.value = option.inputValue;
+        else if (typeof option.label === 'string') this._inputEl.value = option.label;
+        else if (option.label instanceof HTMLElement) this._inputEl.value = option.label.textContent ?? '';
+        else this._inputEl.value = '';
 
         // update others elements
         this._clearOptions();
@@ -93,16 +96,11 @@ export class ZAutocomplete extends LitElement {
         return this._options;
     }
 
-    // --- init
-    constructor() {
-        super();
+    connectedCallback(): void {
+        super.connectedCallback();
 
         // override methode for a debounced one.
         this._onInputChange = debounce(this._onInputChange.bind(this), this.debouceDelay);
-    }
-
-    connectedCallback(): void {
-        super.connectedCallback();
 
         this._initInputEl();
         this._initOptionsEl();
@@ -220,6 +218,7 @@ export class ZAutocomplete extends LitElement {
         let template;
 
         if (this.options.length) template = this.options.map(this._formatOptionTemplate.bind(this));
+        else this._optionsEl.scrollTo(0, 0);
 
         render(template || '', this._optionsEl);
     }
@@ -248,6 +247,7 @@ export class ZAutocomplete extends LitElement {
 
         // if the option chosen is disabled, we pass
         if (this.options[newIndex].disabled) {
+            // compute next index
             let offset = newIndex - this._activeOptionIndex;
             offset = offset > 0 ? offset + 1 : offset - 1;
             this._navigateToOption(this._activeOptionIndex + offset);
@@ -264,7 +264,12 @@ export class ZAutocomplete extends LitElement {
 
             el.setAttribute('aria-selected', String(isSelected));
 
-            if (isSelected) el.scrollIntoView({ block: 'nearest' }); // needed if the ul is scrollable
+            if (isSelected) {
+                const scrollToEl = el.previousElementSibling?.getAttribute('aria-disabled') === 'true'
+                    ? el.previousElementSibling
+                    : el;
+                scrollToEl.scrollIntoView({ block: 'nearest' }); // needed if the ul is scrollable
+            }
         })
     }
 
@@ -274,7 +279,7 @@ export class ZAutocomplete extends LitElement {
         return [];
     }
 
-    public dataToOption(data: any): ZAutocompleteOption | undefined {
+    public dataToOption(data: any): ZAutocompleteOption {
         return {
             label: String(data),
             value: data,
