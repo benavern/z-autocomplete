@@ -39,6 +39,11 @@ const AUTOCOMPLETE_DATA = [
     { id: 5, name: 'Option5' },
     { id: 6, name: 'Option6' },
     { id: 7, name: 'Option7' },
+    { id: 8, name: 'Option8' },
+    { id: 9, name: 'Option9' },
+    { id: 10, name: 'Option10' },
+    { id: 11, name: 'Option11' },
+    { id: 12, name: 'Option12' },
 ];
 
 const fullExampleEl = document.querySelector('#full-example-el') as ZAutocomplete;
@@ -61,7 +66,7 @@ fullExampleEl.dataToOption = (data) => {
     if (!data) return undefined;
 
     // this is fake ...
-    const isTitle = [1, 4].includes(data.id);
+    const isTitle = [1, 4, 7].includes(data.id);
 
     let label: string | HTMLElement = String(data.name);
 
