@@ -50,7 +50,12 @@ export class ZAutocomplete extends LitElement {
     // options visibility
     @property({ type: Boolean })
     set open(val: boolean) {
-        this._optionsEl.hidden = !val || !this.options.length;
+        const hidden = !val || !this.options.length;
+        if (hidden) {
+            this._activeOptionIndex = -1;
+            this._optionsEl.scrollTo(0, 0);
+        }
+        this._optionsEl.hidden = hidden;
         this._inputEl.setAttribute('aria-expanded', String(!this._optionsEl.hidden));
     }
     get open() {
@@ -71,7 +76,7 @@ export class ZAutocomplete extends LitElement {
         else this._inputEl.value = '';
 
         // update others elements
-        this._clearOptions();
+        this.options = [];
         this._updateClearElVisibility();
 
         this.dispatchEvent(new CustomEvent('autocomplete', {
@@ -161,12 +166,6 @@ export class ZAutocomplete extends LitElement {
         if (this._clearEl) this._clearEl.hidden = !(this.value || this._inputEl.value);
     }
 
-    private _clearOptions() {
-        this.options = [];
-        this.open = false;
-        this._activeOptionIndex = -1;
-    }
-
     private _handleClickOutside(e: Event) {
         const event = e as MouseEvent;
 
@@ -191,16 +190,18 @@ export class ZAutocomplete extends LitElement {
                 this._selectOption(this.options[this._activeOptionIndex]);
                 event.preventDefault();
                 break;
+            case 'Escape':
+                this.open = false;
+                event.preventDefault();
+                break;
         }
     }
 
     private _onInput(e: Event) {
         e.stopPropagation();
-        this._clearOptions();
+        this.options = [];
 
-        if (!this._inputEl.value) {
-            return this._onClear();
-        }
+        if (!this._inputEl.value) return this._onClear();
 
         this._abortController?.abort('ZAutocomplete : A new search has been performed');
         this._abortController = new AbortController();
@@ -218,7 +219,6 @@ export class ZAutocomplete extends LitElement {
         let template;
 
         if (this.options.length) template = this.options.map(this._formatOptionTemplate.bind(this));
-        else this._optionsEl.scrollTo(0, 0);
 
         render(template || '', this._optionsEl);
     }
