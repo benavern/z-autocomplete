@@ -66,14 +66,21 @@ fullExampleEl.dataToOption = (data) => {
     if (!data) return undefined;
 
     // this is fake ...
-    const label: string | HTMLElement = String(data.name);
-    return [1, 4, 7].includes(data.id)
-        ? { label, disabled: true }
-        : {
-            label,
-            inputValue: label,
-            value: data,
-        };
+    const isTitle = [1, 4, 7].includes(data.id);
+
+    let label: string | HTMLElement = String(data.name);
+
+    if (isTitle) {
+        label = document.createElement('strong');
+        label.textContent = data.name;
+    }
+
+    return {
+        label,
+        inputValue: String(data.name),
+        value: data,
+        disabled: isTitle,
+    };
 }
 
 fullExampleEl.addEventListener('autocomplete', (e: Event) => {
