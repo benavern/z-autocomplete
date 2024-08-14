@@ -16,7 +16,8 @@
         "build:docs": "tsc && vite build --config vite.config.docs.js",
         "build:lib": "tsc && vite build --config vite.config.lib.js",
         "preview": "vite preview --config vite.config.docs.js",
-        "prepublishOnly": "npm run build:lib"
+        "prepublishOnly": "npm run build:lib",
+        "lint:ts": "tsc --noEmit"
     },
     "devDependencies": {
         "lit": "^3.1.2",
