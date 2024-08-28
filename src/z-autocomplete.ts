@@ -2,12 +2,22 @@ import { LitElement, render } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { html } from 'lit/static-html.js';
 
-export interface ZAutocompleteOption {
+interface ZAutocompleteOptionBase {
     label: string | HTMLElement,
-    value: any,
     inputValue?: string,
-    disabled?: boolean,
-}
+};
+
+export type ZAutocompleteSelectableOption = ZAutocompleteOptionBase & {
+    disabled?: false,
+    value: any,
+};
+
+export type ZAutocompleteDisabledOption = ZAutocompleteOptionBase & {
+    disabled: true,
+    value?: any,
+};
+
+export type ZAutocompleteOption = ZAutocompleteSelectableOption | ZAutocompleteDisabledOption
 
 const debounce: Function = (cb: Function, delay: number = 1000) => {
     let timer: number;
@@ -160,6 +170,7 @@ export class ZAutocomplete extends LitElement {
     private _onClear() {
         this._abortController?.abort('ZAutocomplete [data-z-autocomplete-input] has been cleared.');
         this.value = undefined;
+        this._inputEl.focus();
     }
 
     private _updateClearElVisibility() {
@@ -187,8 +198,10 @@ export class ZAutocomplete extends LitElement {
                 event.preventDefault();
                 break;
             case 'Enter':
-                this._selectOption(this.options[this._activeOptionIndex]);
-                event.preventDefault();
+                if (this._inputEl === event.target) {
+                    this._selectOption(this.options[this._activeOptionIndex]);
+                    event.preventDefault();
+                }
                 break;
             case 'Escape':
                 this.open = false;
