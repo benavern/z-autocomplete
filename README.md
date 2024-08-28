@@ -1,6 +1,6 @@
 # z-autocomplete
 
-An autocomplete web component that doesn not interfere with the semantique
+An autocomplete web component that doesn't interfere with the semantique
 
 * no dependancy
 * easily stylable

@@ -30,8 +30,13 @@ nav.innerHTML = /* html */`
 
 document.body.querySelector('header')?.after(nav);
 
-// Fetch method for the Full Demo
-const AUTOCOMPLETE_DATA = [
+// The Full Demo
+type OptionItem = {
+    id: number,
+    name: string
+};
+
+const AUTOCOMPLETE_DATA: OptionItem[] = [
     { id: 1, name: 'Option1' },
     { id: 2, name: 'Option2' },
     { id: 3, name: 'Option3' },
@@ -46,9 +51,9 @@ const AUTOCOMPLETE_DATA = [
     { id: 12, name: 'Option12' },
 ];
 
-const fullExampleEl = document.querySelector('#full-example-el') as ZAutocomplete;
+const fullExampleEl = document.querySelector('#full-example-el') as ZAutocomplete<OptionItem>;
 
-fullExampleEl.fetchData = async (inputValue: string, abortSignal) => {
+fullExampleEl.fetchData = async (inputValue, abortSignal) => {
     console.log('🔎 we are looking for ... ', inputValue);
 
     // it is here that you will put your fetch code!

@@ -7,17 +7,17 @@ interface ZAutocompleteOptionBase {
     inputValue?: string,
 };
 
-export type ZAutocompleteSelectableOption = ZAutocompleteOptionBase & {
+export type ZAutocompleteSelectableOption<OptionValue> = ZAutocompleteOptionBase & {
     disabled?: false,
-    value: any,
+    value: OptionValue,
 };
 
-export type ZAutocompleteDisabledOption = ZAutocompleteOptionBase & {
+export type ZAutocompleteDisabledOption<OptionValue> = ZAutocompleteOptionBase & {
     disabled: true,
-    value?: any,
+    value?: OptionValue,
 };
 
-export type ZAutocompleteOption = ZAutocompleteSelectableOption | ZAutocompleteDisabledOption
+export type ZAutocompleteOption<OptionValue> = ZAutocompleteSelectableOption<OptionValue> | ZAutocompleteDisabledOption<OptionValue>;
 
 const debounce: Function = (cb: Function, delay: number = 1000) => {
     let timer: number;
@@ -32,7 +32,7 @@ const debounce: Function = (cb: Function, delay: number = 1000) => {
 };
 
 @customElement('z-autocomplete')
-export class ZAutocomplete extends LitElement {
+export class ZAutocomplete<OptionValue> extends LitElement {
     // no shadow root!
     createRenderRoot() {
         return this;
@@ -73,13 +73,14 @@ export class ZAutocomplete extends LitElement {
     }
 
     // value
-    private _value ?: any;
-    @property()
-    set value(val: any) {
+    private _value ?: OptionValue;
+    @property({ attribute: false })
+    set value(val: OptionValue | undefined) {
         this._value = val;
 
         // udpate input value first
         const option = this.dataToOption(val);
+
         if (option?.inputValue) this._inputEl.value = option.inputValue;
         else if (typeof option?.label === 'string') this._inputEl.value = option.label;
         else if (option?.label instanceof HTMLElement) this._inputEl.value = option.label.textContent ?? '';
@@ -100,9 +101,9 @@ export class ZAutocomplete extends LitElement {
     };
 
     // options
-    private _options: ZAutocompleteOption[] = [];
+    private _options: ZAutocompleteOption<OptionValue>[] = [];
     @property({ type: Array })
-    set options(val: ZAutocompleteOption[]) {
+    set options(val: ZAutocompleteOption<OptionValue>[]) {
         this._options = val.filter(Boolean);
         this._renderOptions();
         this.open = !!val.length;
@@ -225,7 +226,7 @@ export class ZAutocomplete extends LitElement {
 
     private async _onInputChange() {
         const data = await this.fetchData(this._inputEl.value, this._abortController?.signal);
-        this.options = data.map(this.dataToOption.bind(this)) as ZAutocompleteOption[];
+        this.options = data.map(this.dataToOption.bind(this)) as ZAutocompleteOption<OptionValue>[];
     }
 
     private _renderOptions() {
@@ -236,7 +237,7 @@ export class ZAutocomplete extends LitElement {
         render(template || '', this._optionsEl);
     }
 
-    private _formatOptionTemplate(option: ZAutocompleteOption, index: number) {
+    private _formatOptionTemplate(option: ZAutocompleteOption<OptionValue>, index: number) {
         return html`
             <li @click="${() => this._selectOption(option)}"
                 data-index="${index}"
@@ -247,7 +248,7 @@ export class ZAutocomplete extends LitElement {
         `
     }
 
-    private _selectOption(option?: ZAutocompleteOption) {
+    private _selectOption(option?: ZAutocompleteOption<OptionValue>) {
         if (!option || option.disabled) return;
 
         this.value = option.value;
@@ -284,12 +285,14 @@ export class ZAutocomplete extends LitElement {
     }
 
     // --- to be implemented from the outside
-    public async fetchData(inputValue: string, abortSignal?: AbortSignal): Promise<any[]> {
+    public async fetchData(inputValue: string, abortSignal?: AbortSignal): Promise<OptionValue[]> {
         console.warn('ZAutocomplete : YOU MUST IMPLEMENT THE fetchOptions METHOD!', { inputValue, aborted: abortSignal?.aborted });
         return [];
     }
 
-    public dataToOption(data: any): ZAutocompleteOption | undefined | null {
+    public dataToOption(data?: OptionValue): ZAutocompleteOption<OptionValue> | undefined {
+        if (typeof data === 'undefined') return undefined;
+
         return {
             label: String(data),
             value: data,
@@ -299,6 +302,6 @@ export class ZAutocomplete extends LitElement {
 
 declare global {
     interface HTMLElementTagNameMap {
-        'z-autocomplete': ZAutocomplete,
+        'z-autocomplete': ZAutocomplete<any>,
     }
 }
