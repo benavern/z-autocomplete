@@ -41,7 +41,7 @@ const AUTOCOMPLETE_DATA: OptionItem[] = [
     { id: 2, name: 'Option2' },
     { id: 3, name: 'Option3' },
     { id: 4, name: 'Option4' },
-    { id: 5, name: 'Option5' },
+    { id: 5, name: 'Option5 (preventDefault)' },
     { id: 6, name: 'Option6' },
     { id: 7, name: 'Option7' },
     { id: 8, name: 'Option8' },
@@ -52,6 +52,7 @@ const AUTOCOMPLETE_DATA: OptionItem[] = [
 ];
 
 const fullExampleEl = document.querySelector('#full-example-el') as ZAutocomplete<OptionItem>;
+const fullExampleClear = document.querySelector('#full-example-clear') as HTMLButtonElement;
 
 fullExampleEl.fetchData = async (inputValue, abortSignal) => {
     console.log('🔎 we are looking for ... ', inputValue);
@@ -89,10 +90,16 @@ fullExampleEl.dataToOption = (data) => {
 }
 
 fullExampleEl.addEventListener('autocomplete', (e: Event) => {
-    const event = e as CustomEvent;
+    const event = e as CustomEvent<OptionItem | undefined>;
 
-    console.log('🌟 value changed to', event.detail);
+    if (event.detail?.id === 5) event.preventDefault();
+
+    console.log('🌟 Chose value', event.detail, 'with event prevented', event.defaultPrevented);
 })
 
 // default value if necessary
 // fullExampleEl.value = AUTOCOMPLETE_DATA[0];
+
+fullExampleClear.addEventListener('click', () => {
+    fullExampleEl.clear();
+})

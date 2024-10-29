@@ -76,25 +76,33 @@ export class ZAutocomplete<OptionValue> extends LitElement {
     private _value ?: OptionValue;
     @property({ attribute: false })
     set value(val: OptionValue | undefined) {
-        this._value = val;
+        const autocompleteEvt = new CustomEvent('autocomplete', {
+            detail: val,
+            bubbles: true,
+            // composed: true, // no need because no shadowDom is used ?
+            cancelable: true,
+        });
 
-        // udpate input value first
-        const option = this.dataToOption(val);
+        this.dispatchEvent(autocompleteEvt);
 
-        if (option?.inputValue) this._inputEl.value = option.inputValue;
-        else if (typeof option?.label === 'string') this._inputEl.value = option.label;
-        else if (option?.label instanceof HTMLElement) this._inputEl.value = option.label.textContent ?? '';
-        else this._inputEl.value = '';
+        if (!autocompleteEvt.defaultPrevented) {
+            this._value = val;
+
+            // udpate input value first
+            const option = this.dataToOption(val);
+
+            if (option?.inputValue) this._inputEl.value = option.inputValue;
+            else if (typeof option?.label === 'string') this._inputEl.value = option.label;
+            else if (option?.label instanceof HTMLElement) this._inputEl.value = option.label.textContent ?? '';
+            else this._inputEl.value = '';
+        } else {
+            this._value = undefined;
+            this._inputEl.value = '';
+        }
 
         // update others elements
         this.options = [];
         this._updateClearElVisibility();
-
-        this.dispatchEvent(new CustomEvent('autocomplete', {
-            detail: val,
-            bubbles: true,
-            // composed: true, // no need because no shadowDom is used ?
-        }));
     }
     get value() {
         return this._value;
@@ -129,7 +137,7 @@ export class ZAutocomplete<OptionValue> extends LitElement {
         }
 
         document.addEventListener('click', this._handleClickOutside.bind(this));
-        this.addEventListener('keydown', this._onKeydown.bind(this));
+        this._inputEl.addEventListener('keydown', this._onKeydown.bind(this));
     }
 
     disconnectedCallback(): void {
@@ -140,7 +148,7 @@ export class ZAutocomplete<OptionValue> extends LitElement {
         this._inputEl.removeEventListener('input', this._onInput.bind(this));
         if (this._clearEl) this._clearEl.removeEventListener('click', this._onClear.bind(this))
         document.removeEventListener('click', this._handleClickOutside.bind(this));
-        this.removeEventListener('keydown', this._onKeydown.bind(this));
+        this._inputEl.removeEventListener('keydown', this._onKeydown.bind(this));
 
     }
 
@@ -199,10 +207,8 @@ export class ZAutocomplete<OptionValue> extends LitElement {
                 event.preventDefault();
                 break;
             case 'Enter':
-                if (this._inputEl === event.target) {
-                    this._selectOption(this.options[this._activeOptionIndex]);
-                    event.preventDefault();
-                }
+                this._selectOption(this.options[this._activeOptionIndex]);
+                event.preventDefault();
                 break;
             case 'Escape':
                 this.open = false;
@@ -282,6 +288,11 @@ export class ZAutocomplete<OptionValue> extends LitElement {
 
             if (isSelected) el.scrollIntoView({ block: 'nearest' }); // needed if the ul is scrollable
         })
+    }
+
+    // --- publicly available
+    public clear(): void {
+        this._onClear();
     }
 
     // --- to be implemented from the outside
