@@ -1,6 +1,5 @@
-import { LitElement, render } from 'lit';
-import { customElement, property, query, state } from 'lit/decorators.js';
-import { html } from 'lit/static-html.js';
+import { LitElement, html, css } from 'lit';
+import { customElement, property, query, queryAssignedElements, state } from 'lit/decorators.js';
 
 interface ZAutocompleteOptionBase {
     label: string | HTMLElement,
@@ -33,47 +32,48 @@ const debounce: Function = (cb: Function, delay: number = 1000) => {
 
 @customElement('z-autocomplete')
 export class ZAutocomplete<OptionValue> extends LitElement {
-    // no shadow root!
-    createRenderRoot() {
-        return this;
-    }
+    // local non reactive properties
+    private _abortController?: AbortController;
+    private _inputEl!: HTMLInputElement | HTMLTextAreaElement;
+    private _clearEl!: HTMLElement;
+    private _open: boolean = false;
+    private _value ?: OptionValue;
+    private _options: ZAutocompleteOption<OptionValue>[] = [];
 
     @property({ type: Number })
     public debouceDelay: Number = 300;
 
-    // --- dom refs
-    @query('[data-z-autocomplete-input]')
-    private _inputEl!: HTMLInputElement | HTMLTextAreaElement; // | ElementContentEditable;
+    // --- slotted dom refs
+    @queryAssignedElements({ selector: '[data-z-autocomplete-input]'})
+    private _inputEls!: (HTMLInputElement | HTMLTextAreaElement)[]; // | ElementContentEditable;
 
-    @query('[data-z-autocomplete-clear]')
-    private _clearEl!: HTMLElement;
+    @queryAssignedElements({ selector: '[data-z-autocomplete-clear]'})
+    private _clearEls!: HTMLElement[];
 
+    // --- shadowDom refs
     @query('[data-z-autocomplete-options]')
     private _optionsEl!: HTMLUListElement;
 
-    // --- properties & state
-    private _abortController?: AbortController;
-
+    // --- attributes, properties, states
     @state()
     private _activeOptionIndex: number = -1;
 
     // options visibility
-    @property({ type: Boolean })
+    @state()
     set open(val: boolean) {
-        const hidden = !val || !this.options.length;
-        if (hidden) {
+        this._open = val && !!this.options.length;
+
+        if (!this._open) {
             this._activeOptionIndex = -1;
             this._optionsEl.scrollTo(0, 0);
         }
-        this._optionsEl.hidden = hidden;
-        this._inputEl.setAttribute('aria-expanded', String(!this._optionsEl.hidden));
+
+        this._inputEl.setAttribute('aria-expanded', String(this._open));
     }
     get open() {
-        return !this._optionsEl.hidden;
+        return this._open;
     }
 
-    // value
-    private _value ?: OptionValue;
     @property({ attribute: false })
     set value(val: OptionValue | undefined) {
         const autocompleteEvt = new CustomEvent('autocomplete', {
@@ -108,26 +108,28 @@ export class ZAutocomplete<OptionValue> extends LitElement {
         return this._value;
     };
 
-    // options
-    private _options: ZAutocompleteOption<OptionValue>[] = [];
-    @property({ type: Array })
+    @state()
     set options(val: ZAutocompleteOption<OptionValue>[]) {
         this._options = val.filter(Boolean);
-        this._renderOptions();
         this.open = !!val.length;
     }
     get options() {
         return this._options;
     }
 
-    connectedCallback(): void {
+    // --- lifecycle
+    async connectedCallback(): Promise<void> {
         super.connectedCallback();
+
+        await this.updateComplete;
+
+        this._inputEl = this._inputEls[0];
+        this._clearEl = this._clearEls[0];
+
+        this._initInputEl();
 
         // override methode for a debounced one.
         this._onInputChange = debounce(this._onInputChange.bind(this), this.debouceDelay);
-
-        this._initInputEl();
-        this._initOptionsEl();
 
         this._inputEl.addEventListener('input', this._onInput.bind(this));
 
@@ -152,6 +154,50 @@ export class ZAutocomplete<OptionValue> extends LitElement {
 
     }
 
+    // --- render methods
+    static styles = css`
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+    `;
+
+    render() {
+        return html`
+            <slot></slot>
+
+            <ul
+                data-z-autocomplete-options
+                part="options-list"
+                ?hidden=${!this.open}>
+                ${this.options.map((option, index) => this._renderOption(option, index))}
+            </ul>
+        `;
+    }
+
+    private _renderOption(option: ZAutocompleteOption<OptionValue>, index: number) {
+        const partsMap = {
+            'options-item': true,
+            'options-item--active': index === this._activeOptionIndex,
+            'options-item--disabled': !!option.disabled,
+        };
+
+        const parts = Object.entries(partsMap).reduce((acc, [part, add]) => (add ? `${acc} ${part}` : acc), '').trim();
+
+        return html`
+            <li
+                part=${parts}
+                data-index="${index}"
+                aria-selected="${index === this._activeOptionIndex}"
+                .aria-disabled="${!!option.disabled}"
+                role="listbox"
+                @click=${() => this._selectOption(option)}>
+                ${option.label}
+            </li>
+        `
+    }
+
     // --- private methods
     private _initInputEl(): void {
         if(!this._inputEl) throw new Error('ZAutocomplete : No [data-z-autocomplete-input] element provided to take control on');
@@ -167,13 +213,6 @@ export class ZAutocomplete<OptionValue> extends LitElement {
     private _initClearEl(): void {
         this._clearEl.setAttribute('type', 'button');
         this._updateClearElVisibility();
-    }
-
-    private _initOptionsEl(): void {
-        if(!this._optionsEl) throw new Error('ZAutocomplete : No ul[data-z-autocomplete-options] element provided to take control on');
-
-        this._optionsEl.setAttribute('role', 'listbox');
-        this._optionsEl.hidden = true;
     }
 
     private _onClear() {
@@ -214,6 +253,8 @@ export class ZAutocomplete<OptionValue> extends LitElement {
                 this.open = false;
                 event.preventDefault();
                 break;
+            default:
+                break;
         }
     }
 
@@ -233,25 +274,6 @@ export class ZAutocomplete<OptionValue> extends LitElement {
     private async _onInputChange() {
         const data = await this.fetchData(this._inputEl.value, this._abortController?.signal);
         this.options = data.map(this.dataToOption.bind(this)) as ZAutocompleteOption<OptionValue>[];
-    }
-
-    private _renderOptions() {
-        let template;
-
-        if (this.options.length) template = this.options.map(this._formatOptionTemplate.bind(this));
-
-        render(template || '', this._optionsEl);
-    }
-
-    private _formatOptionTemplate(option: ZAutocompleteOption<OptionValue>, index: number) {
-        return html`
-            <li @click="${() => this._selectOption(option)}"
-                data-index="${index}"
-                aria-selected="${index === this._activeOptionIndex}"
-                aria-disabled="${!!option.disabled}">
-                ${option.label}
-            </li>
-        `
     }
 
     private _selectOption(option?: ZAutocompleteOption<OptionValue>) {
@@ -283,9 +305,6 @@ export class ZAutocomplete<OptionValue> extends LitElement {
 
         optionEls.forEach((el) => {
             const isSelected = el.dataset.index === String(newIndex);
-
-            el.setAttribute('aria-selected', String(isSelected));
-
             if (isSelected) el.scrollIntoView({ block: 'nearest' }); // needed if the ul is scrollable
         })
     }
