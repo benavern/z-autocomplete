@@ -121,6 +121,7 @@ export class ZAutocomplete<OptionValue> extends LitElement {
     async connectedCallback(): Promise<void> {
         super.connectedCallback();
 
+        // wait for the update to be complete to have more chances to see the input inside the slot dom ...
         await this.updateComplete;
 
         this._inputEl = this._inputEls[0];
@@ -132,6 +133,7 @@ export class ZAutocomplete<OptionValue> extends LitElement {
         this._onInputChange = debounce(this._onInputChange.bind(this), this.debouceDelay);
 
         this._inputEl.addEventListener('input', this._onInput.bind(this));
+        this._inputEl.addEventListener('keydown', this._onKeydown.bind(this));
 
         if (this._clearEl) {
             this._initClearEl();
@@ -139,7 +141,6 @@ export class ZAutocomplete<OptionValue> extends LitElement {
         }
 
         document.addEventListener('click', this._handleClickOutside.bind(this));
-        this._inputEl.addEventListener('keydown', this._onKeydown.bind(this));
     }
 
     disconnectedCallback(): void {
@@ -148,9 +149,11 @@ export class ZAutocomplete<OptionValue> extends LitElement {
         this._abortController?.abort('ZAutocomplete is beeing destroyed');
 
         this._inputEl.removeEventListener('input', this._onInput.bind(this));
-        if (this._clearEl) this._clearEl.removeEventListener('click', this._onClear.bind(this))
-        document.removeEventListener('click', this._handleClickOutside.bind(this));
         this._inputEl.removeEventListener('keydown', this._onKeydown.bind(this));
+
+        if (this._clearEl) this._clearEl.removeEventListener('click', this._onClear.bind(this))
+
+        document.removeEventListener('click', this._handleClickOutside.bind(this));
 
     }
 
