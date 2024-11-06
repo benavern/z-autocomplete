@@ -79,30 +79,34 @@ export class ZAutocomplete<OptionValue> extends LitElement {
         const autocompleteEvt = new CustomEvent('autocomplete', {
             detail: val,
             bubbles: true,
-            // composed: true, // no need because no shadowDom is used ?
+            composed: true,
             cancelable: true,
         });
 
         this.dispatchEvent(autocompleteEvt);
 
-        if (!autocompleteEvt.defaultPrevented) {
-            this._value = val;
+        // only change value when component ready
+        // or this._inputEl could be undefined (ex: on initialization, before connectedCallback is finished)
+        this.updateComplete.then(() => {
+            if (!autocompleteEvt.defaultPrevented) {
+                this._value = val;
 
-            // udpate input value first
-            const option = this.dataToOption(val);
+                // udpate input value first
+                const option = this.dataToOption(val);
 
-            if (option?.inputValue) this._inputEl.value = option.inputValue;
-            else if (typeof option?.label === 'string') this._inputEl.value = option.label;
-            else if (option?.label instanceof HTMLElement) this._inputEl.value = option.label.textContent ?? '';
-            else this._inputEl.value = '';
-        } else {
-            this._value = undefined;
-            this._inputEl.value = '';
-        }
+                if (option?.inputValue) this._inputEl.value = option.inputValue;
+                else if (typeof option?.label === 'string') this._inputEl.value = option.label;
+                else if (option?.label instanceof HTMLElement) this._inputEl.value = option.label.textContent ?? '';
+                else this._inputEl.value = '';
+            } else {
+                this._value = undefined;
+                this._inputEl.value = '';
+            }
 
-        // update others elements
-        this.options = [];
-        this._updateClearElVisibility();
+            // update others elements
+            this.options = [];
+            this._updateClearElVisibility();
+        });
     }
     get value() {
         return this._value;
