@@ -122,6 +122,7 @@ header + nav .nav-burger {
     top: 0;
     padding: 5px;
     background-color: var(--clr-accent);
+    color: var(--clr-bg);
 }
 
 header + nav .nav-burger svg {
