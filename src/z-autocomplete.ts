@@ -44,8 +44,7 @@ export class ZAutocomplete<OptionValue> extends LitElement {
     private _boundOnInput = this._onInput.bind(this);
     private _boundOnKeydown = this._onKeydown.bind(this);
     private _boundOnClear = this._onClear.bind(this);
-    private _boundHandleClickOutside = this._handleClickOutside.bind(this);
-    private _boundOnBlur = this._onBlur.bind(this);
+    private _boundOnFocusOut = this._onFocusOut.bind(this);
 
     @property({ type: Number })
     public debounceDelay: number = 300;
@@ -140,14 +139,12 @@ export class ZAutocomplete<OptionValue> extends LitElement {
 
         this._inputEl.addEventListener('input', this._boundOnInput);
         this._inputEl.addEventListener('keydown', this._boundOnKeydown);
-        this._inputEl.addEventListener('blur', this._boundOnBlur);
+        this.addEventListener('focusout', this._boundOnFocusOut);
 
         if (this._clearEl) {
             this._initClearEl();
             this._clearEl.addEventListener('click', this._boundOnClear);
         }
-
-        document.addEventListener('click', this._boundHandleClickOutside);
     }
 
     disconnectedCallback(): void {
@@ -157,11 +154,9 @@ export class ZAutocomplete<OptionValue> extends LitElement {
 
         this._inputEl.removeEventListener('input', this._boundOnInput);
         this._inputEl.removeEventListener('keydown', this._boundOnKeydown);
-        this._inputEl.removeEventListener('blur', this._boundOnBlur);
+        this.removeEventListener('focusout', this._boundOnFocusOut);
 
         if (this._clearEl) this._clearEl.removeEventListener('click', this._boundOnClear);
-
-        document.removeEventListener('click', this._boundHandleClickOutside);
     }
 
     // --- render methods
@@ -181,6 +176,7 @@ export class ZAutocomplete<OptionValue> extends LitElement {
                 data-z-autocomplete-options
                 part="options-list"
                 role="listbox"
+                tabindex="-1"
                 @mousedown=${(e: Event) => e.preventDefault()}
                 ?hidden=${!this.open}>
                 ${this.options.map((option, index) => this._renderOption(option, index))}
@@ -241,29 +237,32 @@ export class ZAutocomplete<OptionValue> extends LitElement {
 
     private _onClear() {
         this._abortController?.abort('ZAutocomplete [data-z-autocomplete-input] has been cleared.');
+        this._inputEl.value = '';
+        this.options = [];
         this.value = undefined;
+        this._updateClearElVisibility();
         this._inputEl.focus();
     }
 
-    private _onBlur() {
+    private _onFocusOut(e: Event) {
+        const event = e as FocusEvent;
+
+        // Focus moves within the component (e.g., to clear button) → don't reset
+        if (this.contains(event.relatedTarget as Node | null)) return;
+
+        // Always close the dropdown when leaving the component
+        this.open = false;
+
+        // Reset input if no value was selected
         if (this.value === undefined) {
-            this._abortController?.abort('ZAutocomplete : input blurred without selection');
+            this._abortController?.abort('ZAutocomplete : focus left without selection');
             this._inputEl.value = '';
-            this.options = [];
             this._updateClearElVisibility();
         }
     }
 
     private _updateClearElVisibility() {
         if (this._clearEl) this._clearEl.hidden = !(this.value || this._inputEl.value);
-    }
-
-    private _handleClickOutside(e: Event) {
-        const event = e as MouseEvent;
-
-        if (this.contains(event.target as Node | null)) return;
-
-        this.open = false;
     }
 
     private _onKeydown(e: Event) {
