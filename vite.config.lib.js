@@ -7,7 +7,8 @@ export default defineConfig({
     plugins: [
         dtsPlugin({
             insertTypesEntry: true,
-            include:  [WebComponentFile]
+            include:  [WebComponentFile],
+            rollupTypes: true,
         }),
     ],
     build: {

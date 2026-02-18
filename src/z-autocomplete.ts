@@ -18,16 +18,16 @@ export type ZAutocompleteDisabledOption<OptionValue> = ZAutocompleteOptionBase &
 
 export type ZAutocompleteOption<OptionValue> = ZAutocompleteSelectableOption<OptionValue> | ZAutocompleteDisabledOption<OptionValue>;
 
-const debounce: Function = (cb: Function, delay: number = 1000) => {
+const debounce = <T extends (...args: any[]) => void>(cb: T, delay: number = 1000): T => {
     let timer: number;
 
-    return (...args: any[]) => {
+    return ((...args: any[]) => {
         clearTimeout(timer);
 
         timer = setTimeout(() => {
             cb(...args);
         }, delay);
-    };
+    }) as unknown as T;
 };
 
 @customElement('z-autocomplete')
@@ -37,11 +37,17 @@ export class ZAutocomplete<OptionValue> extends LitElement {
     private _inputEl!: HTMLInputElement | HTMLTextAreaElement;
     private _clearEl!: HTMLElement;
     private _open: boolean = false;
-    private _value ?: OptionValue;
+    private _value?: OptionValue;
     private _options: ZAutocompleteOption<OptionValue>[] = [];
 
+    // bound event handlers for proper removeEventListener
+    private _boundOnInput = this._onInput.bind(this);
+    private _boundOnKeydown = this._onKeydown.bind(this);
+    private _boundOnClear = this._onClear.bind(this);
+    private _boundOnFocusOut = this._onFocusOut.bind(this);
+
     @property({ type: Number })
-    public debouceDelay: Number = 300;
+    public debounceDelay: number = 300;
 
     // --- slotted dom refs
     @queryAssignedElements({ selector: '[data-z-autocomplete-input]'})
@@ -76,14 +82,9 @@ export class ZAutocomplete<OptionValue> extends LitElement {
 
     @property({ attribute: false })
     set value(val: OptionValue | undefined) {
-        const autocompleteEvt = new CustomEvent('autocomplete', {
-            detail: val,
-            bubbles: true,
-            composed: true,
-            cancelable: true,
-        });
+        if (val === this._value) return;
 
-        this.dispatchEvent(autocompleteEvt);
+        const autocompleteEvt = this._dispatchAutocompleteEvent(val);
 
         // only change value when component ready
         // or this._inputEl could be undefined (ex: on initialization, before connectedCallback is finished)
@@ -91,7 +92,7 @@ export class ZAutocomplete<OptionValue> extends LitElement {
             if (!autocompleteEvt.defaultPrevented) {
                 this._value = val;
 
-                // udpate input value first
+                // update input value first
                 const option = this.dataToOption(val);
 
                 if (option?.inputValue) this._inputEl.value = option.inputValue;
@@ -133,32 +134,29 @@ export class ZAutocomplete<OptionValue> extends LitElement {
 
         this._initInputEl();
 
-        // override methode for a debounced one.
-        this._onInputChange = debounce(this._onInputChange.bind(this), this.debouceDelay);
+        // override method for a debounced one.
+        this._onInputChange = debounce(this._onInputChange.bind(this), this.debounceDelay);
 
-        this._inputEl.addEventListener('input', this._onInput.bind(this));
-        this._inputEl.addEventListener('keydown', this._onKeydown.bind(this));
+        this._inputEl.addEventListener('input', this._boundOnInput);
+        this._inputEl.addEventListener('keydown', this._boundOnKeydown);
+        this.addEventListener('focusout', this._boundOnFocusOut);
 
         if (this._clearEl) {
             this._initClearEl();
-            this._clearEl.addEventListener('click', this._onClear.bind(this));
+            this._clearEl.addEventListener('click', this._boundOnClear);
         }
-
-        document.addEventListener('click', this._handleClickOutside.bind(this));
     }
 
     disconnectedCallback(): void {
         super.disconnectedCallback();
 
-        this._abortController?.abort('ZAutocomplete is beeing destroyed');
+        this._abortController?.abort('ZAutocomplete is being destroyed');
 
-        this._inputEl.removeEventListener('input', this._onInput.bind(this));
-        this._inputEl.removeEventListener('keydown', this._onKeydown.bind(this));
+        this._inputEl.removeEventListener('input', this._boundOnInput);
+        this._inputEl.removeEventListener('keydown', this._boundOnKeydown);
+        this.removeEventListener('focusout', this._boundOnFocusOut);
 
-        if (this._clearEl) this._clearEl.removeEventListener('click', this._onClear.bind(this))
-
-        document.removeEventListener('click', this._handleClickOutside.bind(this));
-
+        if (this._clearEl) this._clearEl.removeEventListener('click', this._boundOnClear);
     }
 
     // --- render methods
@@ -177,6 +175,9 @@ export class ZAutocomplete<OptionValue> extends LitElement {
             <ul
                 data-z-autocomplete-options
                 part="options-list"
+                role="listbox"
+                tabindex="-1"
+                @mousedown=${(e: Event) => e.preventDefault()}
                 ?hidden=${!this.open}>
                 ${this.options.map((option, index) => this._renderOption(option, index))}
             </ul>
@@ -198,7 +199,7 @@ export class ZAutocomplete<OptionValue> extends LitElement {
                 data-index="${index}"
                 aria-selected="${index === this._activeOptionIndex}"
                 .aria-disabled="${!!option.disabled}"
-                role="listbox"
+                role="option"
                 @click=${() => this._selectOption(option)}>
                 ${option.label}
             </li>
@@ -206,6 +207,18 @@ export class ZAutocomplete<OptionValue> extends LitElement {
     }
 
     // --- private methods
+    private _dispatchAutocompleteEvent(val: OptionValue | undefined): CustomEvent {
+        const autocompleteEvt = new CustomEvent('autocomplete', {
+            detail: val,
+            bubbles: true,
+            composed: true,
+            cancelable: true,
+        });
+
+        this.dispatchEvent(autocompleteEvt);
+        return autocompleteEvt;
+    }
+
     private _initInputEl(): void {
         if(!this._inputEl) throw new Error('ZAutocomplete : No [data-z-autocomplete-input] element provided to take control on');
 
@@ -224,18 +237,32 @@ export class ZAutocomplete<OptionValue> extends LitElement {
 
     private _onClear() {
         this._abortController?.abort('ZAutocomplete [data-z-autocomplete-input] has been cleared.');
+        this._inputEl.value = '';
+        this.options = [];
         this.value = undefined;
+        this._updateClearElVisibility();
         this._inputEl.focus();
+    }
+
+    private _onFocusOut(e: Event) {
+        const event = e as FocusEvent;
+
+        // Focus moves within the component (e.g., to clear button) → don't reset
+        if (this.contains(event.relatedTarget as Node | null)) return;
+
+        // Always close the dropdown when leaving the component
+        this.open = false;
+
+        // Reset input if no value was selected
+        if (this.value === undefined) {
+            this._abortController?.abort('ZAutocomplete : focus left without selection');
+            this._inputEl.value = '';
+            this._updateClearElVisibility();
+        }
     }
 
     private _updateClearElVisibility() {
         if (this._clearEl) this._clearEl.hidden = !(this.value || this._inputEl.value);
-    }
-
-    private _handleClickOutside(e: Event) {
-        const event = e as MouseEvent;
-
-        this.open = this.contains(event.target as Node | null);
     }
 
     private _onKeydown(e: Event) {
@@ -270,6 +297,12 @@ export class ZAutocomplete<OptionValue> extends LitElement {
         this.options = [];
 
         if (!this._inputEl.value) return this._onClear();
+
+        // reset value but keep input text intact for the user to continue typing
+        if (this._value !== undefined) {
+            this._value = undefined;
+            this._dispatchAutocompleteEvent(undefined);
+        }
 
         this._abortController?.abort('ZAutocomplete : A new search has been performed');
         this._abortController = new AbortController();
@@ -323,7 +356,7 @@ export class ZAutocomplete<OptionValue> extends LitElement {
 
     // --- to be implemented from the outside
     public async fetchData(inputValue: string, abortSignal?: AbortSignal): Promise<OptionValue[]> {
-        console.warn('ZAutocomplete : YOU MUST IMPLEMENT THE fetchOptions METHOD!', { inputValue, aborted: abortSignal?.aborted });
+        console.warn('ZAutocomplete : YOU MUST IMPLEMENT THE fetchData METHOD!', { inputValue, aborted: abortSignal?.aborted });
         return [];
     }
 
